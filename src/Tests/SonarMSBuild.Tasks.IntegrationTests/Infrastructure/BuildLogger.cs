@@ -70,6 +70,7 @@ namespace SonarMSBuild.Tasks.IntegrationTests
             this.executedTasks.Add(e);
         }
 
+
         private void UnregisterEvents(IEventSource source)
         {
             source.AnyEventRaised -= Source_AnyEventRaised;
@@ -89,6 +90,7 @@ namespace SonarMSBuild.Tasks.IntegrationTests
 
         #endregion
 
+
         #region Assertions
 
         public TargetStartedEventArgs AssertTargetExecuted(string targetName)
@@ -104,18 +106,6 @@ namespace SonarMSBuild.Tasks.IntegrationTests
             Assert.IsNull(found, "Not expecting the target to have been executed: {0}", targetName);
         }
 
-        public TaskStartedEventArgs AssertTaskExecuted(string taskName)
-        {
-            TaskStartedEventArgs found = this.executedTasks.FirstOrDefault(t => t.TaskName.Equals(taskName, StringComparison.InvariantCulture));
-            Assert.IsNotNull(found, "Specified task was not executed: {0}", taskName);
-            return found;
-        }
-
-        public void AssertTaskNotExecuted(string taskName)
-        {
-            TaskStartedEventArgs found = this.executedTasks.FirstOrDefault(t => t.TaskName.Equals(taskName, StringComparison.InvariantCulture));
-            Assert.IsNull(found, "Not expecting the task to have been executed: {0}", taskName);
-        }
 
         #endregion
     }

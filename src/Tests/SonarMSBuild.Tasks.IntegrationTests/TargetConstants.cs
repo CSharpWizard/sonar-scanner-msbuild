@@ -13,14 +13,10 @@ namespace SonarMSBuild.Tasks.IntegrationTests
 
         // Targets
         public const string WriteSonarProjectDataTargetName = "WriteSonarProjectData";
-        public const string SonarOverrideFxCopSettingsTarget = "OverrideCodeAnalysisProperties";
-        public const string SonarSetFxCopResultsTarget = "SetFxCopAnalysisResult";
+        public const string SonarFxCopTargetName = "SetFxCopAnalysisResult";
 
         public const string DefaultBuildTarget = "Build";
-        
-        // FxCop
         public const string FxCopTarget = "RunCodeAnalysis";
-        public const string FxCopTask = "CodeAnalysis";
 
     }
 
