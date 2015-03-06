@@ -9,10 +9,11 @@ namespace SonarMSBuild.Tasks.IntegrationTests
     internal static class TargetConstants
     {
         // Target file names
-        public const string AnalysisTargetFileName = "Sonar.Integration.v0.1.targets";
+        public const string AnalysisTargetFile = "Sonar.Integration.v0.1.targets";
+        public const string SonarImportsBeforeFile = "Sonar.Integration.ImportBefore.targets";
 
         // Targets
-        public const string WriteSonarProjectDataTargetName = "WriteSonarProjectData";
+        public const string WriteSonarProjectDataTarget = "WriteSonarProjectData";
         public const string SonarOverrideFxCopSettingsTarget = "OverrideCodeAnalysisProperties";
         public const string SonarSetFxCopResultsTarget = "SetFxCopAnalysisResult";
 
@@ -29,9 +30,21 @@ namespace SonarMSBuild.Tasks.IntegrationTests
         public const string ProjectGuid = "ProjectGuid";
         public const string ProjectName = "ProjectName";
 
-        public const string SonarOutputPath = "SonarOutputPath";
+        public const string SonarTargets = "SonarTargets";
+        public const string SonarBinPath = "SonarBinPath";
 
+        public const string RunSonarAnalysis = "RunSonarAnalysis";
+        public const string SonarConfigPath = "SonarConfigPath";
+        public const string SonarOutputPath = "SonarOutputPath";
+        public const string SonarTempPath = "SonarTempPath";
         public const string SonarBuildTasksAssemblyFile = "SonarBuildTasksAssemblyFile";
+
+        public const string RunCodeAnalysis = "RunCodeAnalysis";
+        public const string CodeAnalysisRuleset = "CodeAnalysisRuleSet";
+        public const string CodeAnalysisLogFile = "CodeAnalysisLogFile";
+
+        public const string TeamBuildBuildDirectory = "TF_BUILD_BUILDDIRECTORY";
+        public const string MSBuildExtensionsPath = "MSBuildExtensionsPath";
     }
 
 }

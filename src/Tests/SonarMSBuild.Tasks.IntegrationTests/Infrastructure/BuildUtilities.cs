@@ -18,16 +18,73 @@ namespace SonarMSBuild.Tasks.IntegrationTests
 {
     internal static class BuildUtilities
     {
+        // TODO: work out some way to automatically set the tools version depending on the version of VS being used
+        public const string MSBuildToolsVersionForTestProjects = "12.0"; // use this line for VS2013
+        //public const string MSBuildToolsVersionForTestProjects = "14.0"; // use this line for VS2013
+
         #region Public methods
 
         /// <summary>
+        /// Creates and returns a valid, initialized MSBuild ProjectRootElement for a new project in the
+        /// specified parent folder
+        /// </summary>
+        /// <param name="projectDirectory">The folder in which the project should be created</param>
+        /// <param name="preImportProperties">Any MSBuild properties that should be set before any targets are imported</param>
+        /// <returns></returns>
+        public static ProjectRootElement CreateValidProjectRoot(TestContext testContext, string projectDirectory, IDictionary<string, string> preImportProperties)
+        {
+            ProjectDescriptor descriptor = CreateValidProjectDescriptor(projectDirectory);
+            ProjectRootElement projectRoot = CreateInitializedProjectRoot(testContext, descriptor, preImportProperties);
+            return projectRoot;
+        }
+
+        /// <summary>
+        /// Creates and returns a valid project descriptor for a project in the supplied folders
+        /// </summary>
+        public static ProjectDescriptor CreateValidProjectDescriptor(string parentDirectory)
+        {
+            ProjectDescriptor descriptor = new ProjectDescriptor()
+            {
+                ProjectName = "MyProject",
+                ProjectGuid = Guid.NewGuid(),
+                IsTestProject = false,
+                ParentDirectoryPath = parentDirectory,
+                ProjectFolderName = "MyProjectDir",
+                ProjectFileName = "MyProject.csproj"
+            };
+            return descriptor;
+        }
+
+        /// <summary>
+        /// Creates a project file on disk from the specified descriptor.
+        /// Sets the Sonar output folder property, if specified.
+        /// </summary>
+        public static ProjectRootElement CreateInitializedProjectRoot(TestContext testContext, ProjectDescriptor descriptor, IDictionary<string, string> preImportProperties)
+        {
+            ProjectRootElement projectRoot = BuildUtilities.CreateSonarAnalysisProject(testContext, descriptor, preImportProperties);
+
+            projectRoot.ToolsVersion = MSBuildToolsVersionForTestProjects;
+
+            projectRoot.Save(descriptor.FullFilePath);
+
+            testContext.AddResultFile(descriptor.FullFilePath);
+            return projectRoot;
+        }
+
+        /// <summary>
         /// Creates and returns an empty MSBuild project using the data in the supplied descriptor.
-        /// The project will import the analysis targets file and the standard C# targets file.
+        /// The project will import the Sonar analysis targets file and the standard C# targets file.
         /// The project name and GUID will be set if the values are supplied in the descriptor.
         /// </summary>
-        public static ProjectRootElement CreateMsBuildProject(TestContext testContext, ProjectDescriptor descriptor, IDictionary<string, string> preImportProperties)
+        public static ProjectRootElement CreateSonarAnalysisProject(TestContext testContext, ProjectDescriptor descriptor, IDictionary<string, string> preImportProperties)
         {
-            ProjectRootElement root = CreateMinimalBuildableProject(testContext.TestDeploymentDir, preImportProperties);
+            string sonarTargetFile = Path.Combine(testContext.DeploymentDirectory, TargetConstants.AnalysisTargetFile);
+            Assert.IsTrue(File.Exists(sonarTargetFile), "Test error: the Sonar analysis targets file could not be found. Full path: {0}", sonarTargetFile);
+
+            ProjectRootElement root = CreateMinimalBuildableProject(preImportProperties, sonarTargetFile);
+
+            // Set the location of the task assembly
+            root.AddProperty(TargetProperties.SonarBuildTasksAssemblyFile, typeof(WriteProjectInfoFile).Assembly.Location);
 
             if (!string.IsNullOrEmpty(descriptor.ProjectName))
             {
@@ -60,18 +117,23 @@ namespace SonarMSBuild.Tasks.IntegrationTests
         }
 
         /// <summary>
-        /// Creates and returns a minimal project file that can be built.
-        /// The project imports the C# targets and the Sonar analysis targets.
+        /// Creates and returns a minimal C# project file that can be built.
+        /// The project imports the C# targets and any other optional targets that are specified.
+        /// The project is NOT saved.
         /// </summary>
-        /// <param name="sonarTargetsDir">The directory containing the Sonar targets</param>
         /// <param name="preImportProperties">Any properties that need to be set before the C# targets are imported. Can be null.</param>
-        public static ProjectRootElement CreateMinimalBuildableProject(string sonarTargetsDir, IDictionary<string, string> preImportProperties)
+        /// <param name="importsBeforeTargets">Any targets that should be imported before the C# targets are imported. Optional.</param>
+        public static ProjectRootElement CreateMinimalBuildableProject(IDictionary<string, string> preImportProperties, params string[] importsBeforeTargets)
         {
-            Assert.IsTrue(Directory.Exists(sonarTargetsDir), "Test error: the specified directory does not exist. Path: {0}", sonarTargetsDir);
-
             ProjectRootElement root = ProjectRootElement.Create();
             
             //root.AddImport(@"$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props");
+
+            foreach(string importTarget in importsBeforeTargets)
+            {
+                Assert.IsTrue(File.Exists(importTarget), "Test error: the specified target file does not exist. Path: {0}", importTarget);
+                root.AddImport(importTarget);
+            }
 
             if (preImportProperties != null)
             {
@@ -80,14 +142,6 @@ namespace SonarMSBuild.Tasks.IntegrationTests
                     root.AddProperty(kvp.Key, kvp.Value);
                 }
             }
-
-            // Import the MsBuild Sonar targets file
-            string fullAnalysisTargetPath = Path.Combine(sonarTargetsDir, TargetConstants.AnalysisTargetFileName);
-            Assert.IsTrue(File.Exists(fullAnalysisTargetPath), "Test error: the analysis target file does not exist. Path: {0}", fullAnalysisTargetPath);
-            root.AddImport(fullAnalysisTargetPath);
-
-            // Set the location of the task assembly
-            root.AddProperty(TargetProperties.SonarBuildTasksAssemblyFile, typeof(WriteProjectInfoFile).Assembly.Location);
 
             // Import the standard Microsoft targets
             root.AddImport("$(MSBuildToolsPath)\\Microsoft.CSharp.targets");
@@ -103,15 +157,31 @@ namespace SonarMSBuild.Tasks.IntegrationTests
         /// <param name="logger">The build logger to use. If null then a default logger will be used that dumps the build output to the console.</param>
         /// <param name="targets">Optional list of targets to execute</param>
         /// <returns></returns>
-        public static BuildResult BuildTarget(ProjectInstance project, ILogger logger, params string[] targets)
+        public static BuildResult BuildTargets(ProjectRootElement projectRoot, ILogger logger, params string[] targets)
         {
+            ProjectInstance projectInstance = new ProjectInstance(projectRoot);
+
             BuildParameters parameters = new BuildParameters();
             parameters.Loggers = new ILogger[] { logger ?? new BuildLogger() };
+            parameters.UseSynchronousLogging = true; 
+            parameters.ShutdownInProcNodeOnBuildFinish = true; // required, other we can get an "Attempted to access an unloaded AppDomain" exception when the test finishes.
+            
+            BuildRequestData requestData = new BuildRequestData(projectInstance, targets);
 
-            BuildRequestData requestData = new BuildRequestData(project, targets);
+            BuildResult result = null;
+            BuildManager mgr = new BuildManager();
+            try
+            {
+                result = mgr.Build(parameters, requestData);
 
-            BuildManager mgr = new BuildManager("testHost");
-            BuildResult result = mgr.Build(parameters, requestData);
+                BuildUtilities.DumpProjectProperties(projectInstance, "Project properties post-build");
+            }
+            finally
+            {
+                mgr.ShutdownAllNodes();
+                mgr.ResetCaches();
+                mgr.Dispose();
+            }
 
             return result;
         }
@@ -142,63 +212,6 @@ namespace SonarMSBuild.Tasks.IntegrationTests
             Console.WriteLine();
         }
 
-        #endregion
-
-        #region Assertions
-
-        /// <summary>
-        /// Checks that building the specified target succeeded.
-        /// </summary>
-        public static void AssertTargetSucceeded(BuildResult result, string target)
-        {
-            AssertExpectedTargetOutput(result, target, BuildResultCode.Success);
-        }
-
-        /// <summary>
-        /// Checks that building the specified target failed.
-        /// </summary>
-        public static void AssertTargetFailed(BuildResult result, string target)
-        {
-            AssertExpectedTargetOutput(result, target, BuildResultCode.Failure);
-        }
-
-        /// <summary>
-        /// Checks that building the specified target produced the expected result.
-        /// </summary>
-        public static void AssertExpectedTargetOutput(BuildResult result, string target, BuildResultCode resultCode)
-        {
-            DumpTargetResult(result, target);
-
-            TargetResult targetResult;
-            if (!result.ResultsByTarget.TryGetValue(target, out targetResult))
-            {
-                Assert.Inconclusive(@"Could not find result for target ""{0}""", target);
-            }
-            Assert.AreEqual<BuildResultCode>(resultCode, result.OverallResult, "Unexpected build result");
-        }
-
-
-        /// <summary>
-        /// Checks that the specified item group is empty
-        /// </summary>
-        public static void AssertItemGroupIsEmpty(ProjectInstance project, string itemType)
-        {
-            Assert.IsTrue(project.GetItems(itemType).Count() == 0, "Item group '{0}' should be empty", itemType);
-
-        }
-
-        /// <summary>
-        /// Checks that the specified item group is not empty
-        /// </summary>
-        public static void AssertItemGroupIsNotEmpty(ProjectInstance project, string itemType)
-        {
-            Assert.IsTrue(project.GetItems(itemType).Count() > 0, "Item group '{0}' should be not empty", itemType);
-        }
-
-        #endregion
-
-        #region Private methods
-
         /// <summary>
         /// Writes the build and target output to the output stream
         /// </summary>
@@ -220,6 +233,5 @@ namespace SonarMSBuild.Tasks.IntegrationTests
         }
 
         #endregion
-
     }
 }
