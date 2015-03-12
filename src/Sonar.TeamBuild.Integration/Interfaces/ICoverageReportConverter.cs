@@ -7,7 +7,7 @@
 using Sonar.Common;
 namespace Sonar.TeamBuild.Integration
 {
-    internal interface ICoverageReportConverter
+    public interface ICoverageReportConverter
     {
         /// <summary>
         /// Initialises the converter

@@ -15,7 +15,7 @@ using System.Text.RegularExpressions;
 
 namespace Sonar.TeamBuild.Integration
 {
-    public class CoverageReportConverter : ICoverageReportConverter
+    internal class CoverageReportConverter : ICoverageReportConverter
     {
         /// <summary>
         /// Registry containing information about installed VS versions
