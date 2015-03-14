@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Sonar.MSBuild.Tasks.IntegrationTests
+namespace SonarMSBuild.Tasks.IntegrationTests
 {
     /// <summary>
     /// Simple implementation of <see cref="ILogger"/> that writes all

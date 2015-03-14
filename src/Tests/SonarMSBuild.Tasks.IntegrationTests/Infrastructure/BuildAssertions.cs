@@ -8,7 +8,7 @@ using Microsoft.Build.Execution;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 
-namespace Sonar.MSBuild.Tasks.IntegrationTests
+namespace SonarMSBuild.Tasks.IntegrationTests
 {
     public static class BuildAssertions
     {

@@ -14,7 +14,7 @@ using System.IO;
 using System.Linq;
 using TestUtilities;
 
-namespace Sonar.MSBuild.Tasks.IntegrationTests
+namespace SonarMSBuild.Tasks.IntegrationTests
 {
     internal static class BuildUtilities
     {

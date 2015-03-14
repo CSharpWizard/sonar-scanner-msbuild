@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace Sonar.MSBuild.Tasks
+namespace SonarMSBuild.Tasks
 {
     /// <summary>
     /// MSBuild task to write a ProjectInfo file to disk in XML format
