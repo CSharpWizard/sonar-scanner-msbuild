@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Sonar.MSBuild.Tasks {
+namespace Sonar.TeamBuild.Integration {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Sonar.MSBuild.Tasks {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Sonar.MSBuild.Tasks.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Sonar.TeamBuild.Integration.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,11 +61,11 @@ namespace Sonar.MSBuild.Tasks {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The project does not have a valid ProjectGuid. Analysis results for this project will not be uploaded to SonarQube. Project file: {0}.
+        ///   Looks up a localized string similar to Sonar Analysis Summary.
         /// </summary>
-        internal static string WriteProjectInfoFile_MissingOrInvalidProjectGuid {
+        internal static string SonarSummarySectionHeader {
             get {
-                return ResourceManager.GetString("WriteProjectInfoFile_MissingOrInvalidProjectGuid", resourceCulture);
+                return ResourceManager.GetString("SonarSummarySectionHeader", resourceCulture);
             }
         }
     }
