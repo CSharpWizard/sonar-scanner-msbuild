@@ -16,7 +16,7 @@ namespace Sonar.TeamBuild.PreProcessor
 {
     public class SonarWebService : IDisposable
     {
-        public string Server { get; private set; }
+        private readonly string Server;
         private readonly string Language;
         private readonly string Repository;
         private readonly IDownloader Downloader;

@@ -14,8 +14,7 @@ namespace Sonar.TeamBuild.PreProcessor.Tests
     {
         private bool fetchPropertiesCalled;
 
-        private string actualKey;
-        private SonarWebService actualWs;
+        private string actualKey, actualUrl, actualUserName, actualPassword;
 
         #region Assertions
 
@@ -24,24 +23,29 @@ namespace Sonar.TeamBuild.PreProcessor.Tests
             Assert.IsTrue(this.fetchPropertiesCalled, "Expecting FetchProperties to have been called");
         }
 
-        public void CheckFetcherArguments(string expectedWsServer, string expectedKey)
+        public void CheckFetcherArguments(string expectedKey, string expectedUrl, string expectedUserName, string expectedPassword)
         {
             Assert.AreEqual(expectedKey, this.actualKey);
-            Assert.AreEqual(expectedWsServer, this.actualWs.Server);
+            Assert.AreEqual(expectedUrl, this.actualUrl);
+            Assert.AreEqual(expectedUserName, this.actualUserName);
+            Assert.AreEqual(expectedPassword, this.actualPassword);
         }
 
         #endregion
 
         #region IPropertiesFetcher interface
 
-        IDictionary<string, string> IPropertiesFetcher.FetchProperties(SonarWebService ws, string sonarProjectKey)
+        IDictionary<string, string> IPropertiesFetcher.FetchProperties(string sonarProjectKey, string sonarUrl, string userName, string password)
         {
             Assert.IsFalse(string.IsNullOrWhiteSpace(sonarProjectKey), "Supplied project key should not be null");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(sonarUrl), "Supplied sonar url should not be null");
 
             this.fetchPropertiesCalled = true;
 
             this.actualKey = sonarProjectKey;
-            this.actualWs = ws;
+            this.actualUrl = sonarUrl;
+            this.actualUserName = userName;
+            this.actualPassword = password;
 
             return new Dictionary<string, string>();
         }
