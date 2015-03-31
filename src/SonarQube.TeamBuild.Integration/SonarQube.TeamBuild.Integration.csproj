@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C28A09BF-6025-4EA1-90D7-4D5EC0AF815D}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{66CE9491-1C14-45D2-BEB6-A0695C63EBB2}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SonarRunner.Shim</RootNamespace>
-    <AssemblyName>SonarRunner.Shim</AssemblyName>
+    <RootNamespace>SonarQube.TeamBuild.Integration</RootNamespace>
+    <AssemblyName>SonarQube.TeamBuild.Integration</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -31,6 +29,26 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <!-- ***************************************************************** -->
+  <!-- Team Foundation references -->
+  <!-- ***************************************************************** -->
+  <ItemGroup>
+    <Reference Include="Microsoft.TeamFoundation.Client">
+      <HintPath>$(DevEnvDir)Extensions\Team Explorer\Microsoft.TeamFoundation.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.TeamFoundation.Build.Client">
+      <HintPath>$(DevEnvDir)Extensions\Team Explorer\Microsoft.TeamFoundation.Build.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.TeamFoundation.TestManagement.Client">
+      <HintPath>$(DevEnvDir)Extensions\Team Explorer\Microsoft.TeamFoundation.TestManagement.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.TeamFoundation.WorkItemTracking.Client">
+      <HintPath>$(DevEnvDir)Extensions\Team Explorer\Microsoft.TeamFoundation.WorkItemTracking.Client.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <!-- ***************************************************************** -->
+  <!-- End of Team Foundation references -->
+  <!-- ***************************************************************** -->
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -41,21 +59,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ISonarRunner.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="PropertiesWriter.cs" />
-    <Compile Include="ProjectLoader.cs" />
-    <Compile Include="Project.cs" />
+    <Compile Include="AssemblyFriends.cs" />
+    <Compile Include="BuildSummaryLogger.cs" />
+    <Compile Include="CoverageReportConverter.cs" />
+    <Compile Include="CoverageReportDownloader.cs" />
+    <Compile Include="CoverageReportProcessor.cs" />
+    <Compile Include="CoverageReportUrlProvider.cs" />
+    <Compile Include="Interfaces\ICoverageUrlProvider.cs" />
+    <Compile Include="Interfaces\ICoverageReportConverter.cs" />
+    <Compile Include="Interfaces\ICoverageReportDownloader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="SonarRunner.Wrapper.cs" />
+    <Compile Include="TeamBuildAnalysisSettings.cs" />
+    <Compile Include="TeamBuildSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SonarQube.Common\SonarQube.Common.csproj">
