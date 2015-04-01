@@ -23,14 +23,16 @@ namespace SonarRunner.Shim.Tests
         #region Tests
 
         [TestMethod]
+        [DeploymentItem("ProjectLoaderTest", "ProjectLoaderTest")]
         public void ProjectLoader()
         {
             // Arrange
-            string testSourcePath = TestUtils.CreateTestSpecificFolder(this.TestContext);
+            string testSourcePath = Path.Combine(this.TestContext.DeploymentDirectory, "ProjectLoaderTest");
+            Assert.IsTrue(Directory.Exists(testSourcePath), "Test error: failed to locate the ProjectLoaderTest folder: {0}", testSourcePath);
 
-            // Create sub-directories, some with project info XML files and some without
-            TestUtils.EnsureTestSpecificFolder(this.TestContext, "EmptyDir1");
-
+            // The test folders that can be set up statically will have been copied to testSourcePath.
+            // Now add the test folders that need to be set up dynamically (i.e. those that need a valid full path
+            // embedded in the ProjectInfo.xml).
             ProjectDescriptor validTestProject = new ProjectDescriptor()
             {
                 ParentDirectoryPath = testSourcePath,
@@ -42,8 +44,6 @@ namespace SonarRunner.Shim.Tests
                 ContentFiles = new string[] { "contentFile1.js" },
             };
             CreateFilesFromDescriptor(validTestProject, "testCompileListFile", "testContentList", "testFxCopReport", "testVisualStudioCodeCoverageReport");
-
-            TestUtils.EnsureTestSpecificFolder(this.TestContext, "EmptyDir2");
 
             ProjectDescriptor validNonTestProject = new ProjectDescriptor()
             {
@@ -68,16 +68,19 @@ namespace SonarRunner.Shim.Tests
             CreateFilesFromDescriptor(validNonTestNoReportsProject, "SomeList.txt", null, null, null);
 
             // Act
-            List<ProjectInfo> projects = SonarRunner.Shim.ProjectLoader.LoadFrom(testSourcePath);
+            List<Project> projects = SonarRunner.Shim.ProjectLoader.LoadFrom(testSourcePath);
 
             // Assert
             Assert.AreEqual(3, projects.Count);
 
-            AssertProjectResultExists(validTestProject.ProjectName, projects);
+            Project actualTestProject = AssertProjectResultExists(validTestProject.ProjectName, projects);
+            AssertProjectMatchesDescriptor(validTestProject, actualTestProject);
 
-            AssertProjectResultExists(validNonTestProject.ProjectName, projects);
+            Project actualNonTestProject = AssertProjectResultExists(validNonTestProject.ProjectName, projects);
+            AssertProjectMatchesDescriptor(validNonTestProject, actualNonTestProject);
 
-            AssertProjectResultExists(validNonTestNoReportsProject.ProjectName, projects);
+            Project actualNonTestNoReportsProject = AssertProjectResultExists(validNonTestNoReportsProject.ProjectName, projects);
+            AssertProjectMatchesDescriptor(validNonTestNoReportsProject, actualNonTestNoReportsProject);
         }
 
         [TestMethod]
@@ -101,7 +104,7 @@ namespace SonarRunner.Shim.Tests
             CreateFilesFromDescriptor(validNonTestProject, "CompileList.txt", null, null, null);
 
             // 1. Run against the root dir -> not expecting the project to be found
-            List<ProjectInfo> projects = SonarRunner.Shim.ProjectLoader.LoadFrom(rootTestDir);
+            List<Project> projects = SonarRunner.Shim.ProjectLoader.LoadFrom(rootTestDir);
             Assert.AreEqual(0, projects.Count);
 
             // 2. Run against the child dir -> project should be found
@@ -180,11 +183,39 @@ namespace SonarRunner.Shim.Tests
 
         #region Assertions
 
-        private static ProjectInfo AssertProjectResultExists(string expectedProjectName, List<ProjectInfo> actualProjects)
+        private static Project AssertProjectResultExists(string expectedProjectName, List<Project> actualProjects)
         {
-            ProjectInfo actual = actualProjects.FirstOrDefault(p => expectedProjectName.Equals(p.ProjectName));
+            Project actual = actualProjects.FirstOrDefault(p => expectedProjectName.Equals(p.Name));
             Assert.IsNotNull(actual, "Failed to find project with the expected name: {0}", expectedProjectName);
             return actual;
+        }
+
+        private static void AssertProjectMatchesDescriptor(ProjectDescriptor expected, Project actual)
+        {
+            Assert.AreEqual(expected.ProjectName, actual.Name);
+            Assert.AreEqual(expected.ProjectGuid, actual.Guid);
+            Assert.AreEqual(expected.FullFilePath, actual.MsBuildProject);
+            Assert.AreEqual(expected.IsTestProject, actual.IsTest);
+
+            List<string> expectedFiles = new List<string>();
+            if (expected.ManagedSourceFiles != null)
+            {
+                expectedFiles.AddRange(expected.ManagedSourceFiles);
+            }
+            if (expected.ContentFiles != null)
+            {
+                expectedFiles.AddRange(expected.ContentFiles);
+            }
+            Assert.AreEqual(expectedFiles.Count, actual.Files.Count);
+            CollectionAssert.AreEqual(expectedFiles, actual.Files);
+
+            AnalysisResult fxCopResult = expected.AnalysisResults.FirstOrDefault(e => AnalysisType.FxCop.ToString().Equals(e.Id));
+            string fxCopReport = null;
+            if (fxCopResult != null)
+            {
+                fxCopReport = fxCopResult.Location;
+            }
+            Assert.AreEqual(fxCopReport, actual.FxCopReport);
         }
 
         #endregion
