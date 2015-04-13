@@ -67,7 +67,6 @@ namespace SonarQube.MSBuild.Tasks.UnitTests
             Guid projectGuid = Guid.NewGuid();
 
             WriteProjectInfoFile task = new WriteProjectInfoFile();
-            task.BuildEngine = new DummyBuildEngine();
             task.FullProjectPath = "x:\\a.csproj";
             task.IsTest = false;
             task.OutputFolder = testFolder;

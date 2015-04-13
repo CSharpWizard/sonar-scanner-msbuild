@@ -14,15 +14,14 @@ namespace SonarQube.TeamBuild.PreProcessor.Tests
     {
         /// <summary>
         /// Creates and returns an environment scope that contains all of the required
-        /// legacy TeamBuild environment variables
+        /// TeamBuild environment variables
         /// </summary>
-        public static EnvironmentVariableScope CreateValidLegacyTeamBuildScope(string tfsUri, string buildUri, string buildDir)
+        public static EnvironmentVariableScope CreateValidTeamBuildScope(string tfsUri, string buildUri, string buildDir)
         {
             EnvironmentVariableScope scope = new EnvironmentVariableScope();
-            scope.AddVariable(TeamBuildSettings.EnvironmentVariables.IsInTeamBuild, "true");
-            scope.AddVariable(TeamBuildSettings.EnvironmentVariables.TfsCollectionUri_Legacy, tfsUri);
-            scope.AddVariable(TeamBuildSettings.EnvironmentVariables.BuildUri_Legacy, buildUri);
-            scope.AddVariable(TeamBuildSettings.EnvironmentVariables.BuildDirectory_Legacy, buildDir);
+            scope.AddVariable(TeamBuildSettings.TeamBuildEnvironmentVariables.TfsCollectionUri, tfsUri);
+            scope.AddVariable(TeamBuildSettings.TeamBuildEnvironmentVariables.BuildUri, buildUri);
+            scope.AddVariable(TeamBuildSettings.TeamBuildEnvironmentVariables.BuildDirectory, buildDir);
             return scope;
         }
 

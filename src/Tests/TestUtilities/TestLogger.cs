@@ -7,7 +7,6 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SonarQube.Common;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -66,17 +65,6 @@ namespace TestUtilities
             Assert.IsFalse(found, "Not expecting the message to have been logged: '{0}'", message);
         }
 
-        /// <summary>
-        /// Checks that a warning exists that contains all of the specified strings
-        /// </summary>
-        public void AssertWarningExists(params string[] expected)
-        {
-            IEnumerable<string> matches = this.Warnings.Where(w => expected.All(e => w.Contains(e)));
-            Assert.AreNotEqual(0, matches.Count(), "No warning contains the expected strings: {0}", string.Join(",", expected));
-            Assert.AreEqual(1, matches.Count(), "More than one warning contains the expected strings: {0}", string.Join(",", expected));
-        }
-
-
         #endregion
 
         #region ILogger interface
@@ -84,19 +72,16 @@ namespace TestUtilities
         public void LogMessage(string message, params object[] args)
         {
             Messages.Add(GetFormattedMessage(message, args));
-            Console.WriteLine("MESSAGE: ", message, args);
         }
 
         public void LogWarning(string message, params object[] args)
         {
             Warnings.Add(GetFormattedMessage(message, args));
-            Console.WriteLine("WARNING: ", message, args);
         }
 
         public void LogError(string message, params object[] args)
         {
             Errors.Add(GetFormattedMessage(message, args));
-            Console.WriteLine("ERROR: ", message, args);
         }
 
         #endregion

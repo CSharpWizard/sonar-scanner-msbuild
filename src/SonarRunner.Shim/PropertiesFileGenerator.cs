@@ -76,35 +76,31 @@ namespace SonarRunner.Shim
 
             foreach (ProjectInfo projectInfo in projects)
             {
-                ProjectInfoValidity status = ClassifyProject(projectInfo, projects, logger);
+                ProjectInfoValidity status = ClassifyProject(projectInfo, projects);
                 result.Projects.Add(projectInfo, status);
             }
             return result;
         }
 
-        private static ProjectInfoValidity ClassifyProject(ProjectInfo projectInfo, IEnumerable<ProjectInfo> projects, ILogger logger)
+        private static ProjectInfoValidity ClassifyProject(ProjectInfo projectInfo, IEnumerable<ProjectInfo> projects)
         {
             if (projectInfo.IsExcluded)
             {
-                logger.LogMessage(Resources.DIAG_ProjectIsExcluded, projectInfo.FullPath);
                 return ProjectInfoValidity.ExcludeFlagSet;
             }
 
             if (!IsProjectGuidValue(projectInfo))
             {
-                logger.LogWarning(Resources.WARN_InvalidProjectGuid, projectInfo.ProjectGuid, projectInfo.FullPath);
                 return ProjectInfoValidity.InvalidGuid;
             }
 
             if (HasDuplicateGuid(projectInfo, projects))
             {
-                logger.LogWarning(Resources.WARN_DuplicateProjectGuid, projectInfo.ProjectGuid, projectInfo.FullPath);
                 return ProjectInfoValidity.DuplicateGuid;
             }
 
             if (!projectInfo.GetFilesToAnalyze().Any())
             {
-                logger.LogMessage(Resources.DIAG_NoFilesToAnalyze, projectInfo.FullPath);
                 return ProjectInfoValidity.NoFilesToAnalyze;
             }
 

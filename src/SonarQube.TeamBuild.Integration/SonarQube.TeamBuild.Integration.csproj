@@ -32,25 +32,20 @@
   <!-- ***************************************************************** -->
   <!-- Team Foundation references -->
   <!-- ***************************************************************** -->
-
-  <PropertyGroup>
-    <TeamExplorerBinPath>$(DevEnvDir)CommonExtensions\Microsoft\TeamFoundation\Team Explorer\</TeamExplorerBinPath>
-  </PropertyGroup>
-
   <ItemGroup>
     <Reference Include="Microsoft.TeamFoundation.Client">
-      <HintPath>$(TeamExplorerBinPath)Microsoft.TeamFoundation.Client.dll</HintPath>
+      <HintPath>$(DevEnvDir)CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Microsoft.TeamFoundation.Client.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.TeamFoundation.Build.Client">
-      <HintPath>$(TeamExplorerBinPath)Microsoft.TeamFoundation.Build.Client.dll</HintPath>
+      <HintPath>$(DevEnvDir)CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Microsoft.TeamFoundation.Build.Client.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.TeamFoundation.WorkItemTracking.Client">
-      <HintPath>$(TeamExplorerBinPath)Microsoft.TeamFoundation.WorkItemTracking.Client.dll</HintPath>
+      <HintPath>$(DevEnvDir)CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Microsoft.TeamFoundation.WorkItemTracking.Client.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(VisualStudioVersion)' &gt;= '14.0'">
     <Reference Include="Microsoft.TeamFoundation.TestManagement.Client">
-      <HintPath>$(TeamExplorerBinPath)Microsoft.TeamFoundation.TestManagement.Client.dll</HintPath>
+      <HintPath>$(DevEnvDir)CommonExtensions\Microsoft\TeamFoundation\Team Explorer\Microsoft.TeamFoundation.TestManagement.Client.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(VisualStudioVersion)' &lt; '14.0'">
@@ -72,7 +67,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyFriends.cs" />
-    <Compile Include="BuildEnvironment.cs" />
     <Compile Include="BuildSummaryLogger.cs" />
     <Compile Include="CoverageReportConverter.cs" />
     <Compile Include="CoverageReportDownloader.cs" />

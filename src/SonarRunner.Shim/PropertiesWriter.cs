@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -35,10 +34,11 @@ namespace SonarRunner.Shim
                 throw new ArgumentNullException("projects");
             }
             
-            Debug.Assert(projects.Select(p => p.ProjectGuid).Distinct().Count() == projects.Count(),
-                "Expecting the project guids to be unique");
-
             var uniqueProjects = projects.GroupBy(p => p.ProjectGuid).Where(g => g.Count() == 1).Select(g => g.First());
+            foreach (var duplicatedProject in projects.Where(p => !uniqueProjects.Any(p2 => p.ProjectGuid.Equals(p2.ProjectGuid))))
+            {
+                logger.LogWarning(Resources.WARN_DuplicateProjectGuid, duplicatedProject.GetProjectGuidAsString(), duplicatedProject.FullPath);
+            }
 
             StringBuilder sb = new StringBuilder();
 
@@ -57,7 +57,7 @@ namespace SonarRunner.Shim
 
             foreach (var project in uniqueProjects)
             {
-                WriteSettingsForProject(config, sb, project, logger);
+                WriteSettingsForProject(config, sb, project);
             }
 
             return sb.ToString();
@@ -108,7 +108,7 @@ namespace SonarRunner.Shim
             return c <= sbyte.MaxValue;
         }
 
-        private static void WriteSettingsForProject(AnalysisConfig config, StringBuilder sb, ProjectInfo project, ILogger logger)
+        private static void WriteSettingsForProject(AnalysisConfig config, StringBuilder sb, ProjectInfo project)
         {
             IList<string> files = project.GetFilesToAnalyze();
             Debug.Assert(files.Count > 0, "Expecting files to have a project to have files to analyze");
@@ -121,27 +121,12 @@ namespace SonarRunner.Shim
             string fxCopReport = project.TryGetAnalysisFileLocation(AnalysisType.FxCop);
             if (fxCopReport != null)
             {
-                if (File.Exists(fxCopReport))
-                {
-                    AppendKeyValue(sb, guid, "sonar.cs.fxcop.reportPath", fxCopReport);
-                }
-                else
-                {
-                    logger.LogWarning(Resources.WARN_FxCopReportNotFound, fxCopReport);
-                }
+                AppendKeyValue(sb, guid, "sonar.cs.fxcop.reportPath", fxCopReport);
             }
-
             string vsCoverageReport = project.TryGetAnalysisFileLocation(AnalysisType.VisualStudioCodeCoverage);
             if (vsCoverageReport != null)
             {
-                if (File.Exists(vsCoverageReport))
-                {
-                    AppendKeyValue(sb, guid, "sonar.cs.vscoveragexml.reportsPaths", vsCoverageReport);
-                }
-                else
-                {
-                    logger.LogWarning(Resources.WARN_CodeCoverageReportNotFound, vsCoverageReport);
-                }
+                AppendKeyValue(sb, guid, "sonar.cs.vscoveragexml.reportsPaths", vsCoverageReport);
             }
             if (project.ProjectType == ProjectType.Product)
             {

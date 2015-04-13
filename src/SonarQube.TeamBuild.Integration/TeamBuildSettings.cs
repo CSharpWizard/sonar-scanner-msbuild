@@ -20,160 +20,69 @@ namespace SonarQube.TeamBuild.Integration
     {
         internal const string ConfigFileName = "SonarQubeAnalysisConfig.xml";
 
-        internal const int DefaultLegacyCodeCoverageTimeout = 30000; // ms
-
-        internal static class EnvironmentVariables
+        internal static class TeamBuildEnvironmentVariables
         {
-            /// <summary>
-            /// Name of the environment variable that specifies the directory to use as the 
-            /// analysis root in non-TFS cases
-            /// </summary>
-            public const string SQAnalysisRootPath = "SQ_BUILDDIRECTORY";
+            public const string IsInTeamBuild = "TF_Build";
+            public const string TfsCollectionUri = "TF_BUILD_COLLECTIONURI";
+            public const string BuildUri = "TF_BUILD_BUILDURI";
+            public const string BuildDirectory = "TF_BUILD_BUILDDIRECTORY";
+            //        public const string BinariesDirectory = "TF_BUILD_BINARIESDIRECTORY";
 
-            /// <summary>
-            /// Name of the environment variable that specifies whether the processing
-            /// of code coverage reports in legacy TeamBuild cases should be skipped
-            /// </summary>
-            public const string SkipLegacyCodeCoverage = "SQ_SkipLegacyCodeCoverage";
-
-            /// <summary>
-            /// Name of the environment variable that specifies how long to spend
-            /// attempting to retrieve code coverage reports in legacy TeamBuild cases
-            /// </summary>
-            public const string LegacyCodeCoverageTimeoutInMs = "SQ_LegacyCodeCoverageInMs";
-
-            public const string IsInTeamBuild = "TF_Build"; // Common to legacy and non-legacy TeamBuilds
-
-            // Legacy TeamBuild environment variables (XAML Builds)
-            public const string TfsCollectionUri_Legacy = "TF_BUILD_COLLECTIONURI";
-            public const string BuildUri_Legacy = "TF_BUILD_BUILDURI";
-            public const string BuildDirectory_Legacy = "TF_BUILD_BUILDDIRECTORY";
-
-            // TFS 2015 Environment variables
-            public const string TfsCollectionUri_TFS2015 = "SYSTEM_TEAMFOUNDATIONCOLLECTIONURI";
-            public const string BuildUri_TFS2015 = "BUILD_BUILDURI";
-            public const string BuildDirectory_TFS2015 = "AGENT_BUILDDIRECTORY";
+            // Other available environment variables:
+            //TF_BUILD_BUILDDEFINITIONNAME: SimpleBuild1
+            //TF_BUILD_BUILDNUMBER: SimpleBuild1_20150310.4
+            //TF_BUILD_BUILDREASON: Manual
+            //TF_BUILD_DROPLOCATION: 
+            //TF_BUILD_SOURCEGETVERSION: C14
+            //TF_BUILD_SOURCESDIRECTORY: C:\Builds\1\Demos\SimpleBuild1\src
+            //TF_BUILD_TESTRESULTSDIRECTORY: C:\Builds\1\Demos\SimpleBuild1\tst
         }
 
-        #region Public static methods
+        #region Public methods
 
         /// <summary>
         /// Factory method to create and return a new set of team build settings
         /// calculated from environment variables.
         /// Returns null if all of the required environment variables are not present.
         /// </summary>
+        /// <param name="logger"></param>
+        /// <returns></returns>
         public static TeamBuildSettings GetSettingsFromEnvironment(ILogger logger)
         {
             TeamBuildSettings settings = null;
 
-            BuildEnvironment env = GetBuildEnvironemnt();
-            switch (env)
+            bool environmentIsValid = CheckRequiredEnvironmentVariablesExist(logger,
+                TeamBuildEnvironmentVariables.TfsCollectionUri,
+                TeamBuildEnvironmentVariables.BuildDirectory,
+                TeamBuildEnvironmentVariables.BuildUri);
+
+            if (environmentIsValid)
             {
-                case BuildEnvironment.LegacyTeamBuild:
-
-                    logger.LogMessage(Resources.SETTINGS_InLegacyTeamBuild);
-                    settings = new TeamBuildSettings()
-                    {
-                        BuildEnvironment = env,
-                        BuildUri = Environment.GetEnvironmentVariable(EnvironmentVariables.BuildUri_Legacy),
-                        TfsUri = Environment.GetEnvironmentVariable(EnvironmentVariables.TfsCollectionUri_Legacy),
-                        BuildDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.BuildDirectory_Legacy)
-                    };
-
-                    break;
-
-                case BuildEnvironment.TeamBuild:
-                    logger.LogMessage(Resources.SETTINGS_InTeamBuild);
-                    settings = new TeamBuildSettings()
-                    {
-                        BuildEnvironment = env,
-                        BuildUri = Environment.GetEnvironmentVariable(EnvironmentVariables.BuildUri_TFS2015),
-                        TfsUri = Environment.GetEnvironmentVariable(EnvironmentVariables.TfsCollectionUri_TFS2015),
-                        BuildDirectory = Environment.GetEnvironmentVariable(EnvironmentVariables.BuildDirectory_TFS2015)
-                    };
-                    
-                    break;
-
-                default:
-                    logger.LogMessage(Resources.SETTINGS_NotInTeamBuild);
-
-                    string buildDir = Environment.GetEnvironmentVariable(EnvironmentVariables.SQAnalysisRootPath);
-                    if (string.IsNullOrEmpty(buildDir))
-                    {
-                        buildDir = Path.GetTempPath();
-                    }
-
-                    settings = new TeamBuildSettings()
-                    {
-                        BuildEnvironment = env,
-                        BuildDirectory = buildDir
-                    };
-
-                    break;
-            }
+                // TODO: validate environment variables
+                settings = new TeamBuildSettings()
+                {
+                    BuildUri = Environment.GetEnvironmentVariable(TeamBuildEnvironmentVariables.BuildUri),
+                    TfsUri = Environment.GetEnvironmentVariable(TeamBuildEnvironmentVariables.TfsCollectionUri),
+                    BuildDirectory = Environment.GetEnvironmentVariable(TeamBuildEnvironmentVariables.BuildDirectory)
+                };
+            };
 
             return settings;
-        }
-
-        /// <summary>
-        /// Returns the type of the current build enviroment: not under TeamBuild, legacy TeamBuild, "new" TeamBuild
-        /// </summary>
-        public static BuildEnvironment GetBuildEnvironemnt()
-        {
-            BuildEnvironment env = BuildEnvironment.NotTeamBuild;
-
-            if (IsInTeamBuild)
-            {
-                // Work out which flavour of TeamBuild
-                string buildUri = Environment.GetEnvironmentVariable(EnvironmentVariables.BuildUri_Legacy);
-                if (string.IsNullOrEmpty(buildUri))
-                {
-                    buildUri = Environment.GetEnvironmentVariable(EnvironmentVariables.BuildUri_TFS2015);
-                    if (!string.IsNullOrEmpty(buildUri))
-                    {
-                        env = BuildEnvironment.TeamBuild;
-                    }
-                }
-                else
-                {
-                    env = BuildEnvironment.LegacyTeamBuild;
-                }
-            }
-            return env;
         }
 
         public static bool IsInTeamBuild
         {
             get
-            {                
-                return TryGetBoolEnvironmentVariable(EnvironmentVariables.IsInTeamBuild, false);
-            }
-        }
-
-        public static bool SkipLegacyCodeCoverageProcessing
-        {
-            get
             {
-                return TryGetBoolEnvironmentVariable(EnvironmentVariables.SkipLegacyCodeCoverage, false);
+                string value = Environment.GetEnvironmentVariable(TeamBuildEnvironmentVariables.IsInTeamBuild);
+                
+                bool result;
+                if (value != null && bool.TryParse(value, out result))
+                {
+                    return result;
+                }
+                return false;
             }
-        }
-
-        public static int LegacyCodeCoverageProcessingTimeout
-        {
-            get
-            {
-                return TryGetIntEnvironmentVariable(EnvironmentVariables.LegacyCodeCoverageTimeoutInMs, DefaultLegacyCodeCoverageTimeout);
-            }
-        }
-
-        #endregion
-
-        #region Public properties
-
-        public BuildEnvironment BuildEnvironment
-        {
-            get;
-            private set;
         }
 
         public string TfsUri
@@ -220,37 +129,29 @@ namespace SonarQube.TeamBuild.Integration
         }
 
         #endregion
-
+        
         #region Private methods
 
-        private static bool TryGetBoolEnvironmentVariable(string envVar, bool defaultValue)
+        private static bool CheckRequiredEnvironmentVariablesExist(ILogger logger, params string[] required)
         {
-            string value = Environment.GetEnvironmentVariable(envVar);
+            IDictionary allVars = Environment.GetEnvironmentVariables();
 
-            bool result;
-            if (value != null && bool.TryParse(value, out result))
+            bool allFound = true;
+            foreach (string requiredVar in required)
             {
-                return result;
+                string value = allVars[requiredVar] as string;
+                if (value == null || string.IsNullOrEmpty(value))
+                {
+                    if (logger != null)
+                    {
+                        logger.LogError(Resources.MissingEnvironmentVariable, requiredVar);
+                    }
+                    allFound = false;
+                }
             }
-            return defaultValue;
-        }
-
-        private static int TryGetIntEnvironmentVariable(string envVar, int defaultValue)
-        {
-            string value = Environment.GetEnvironmentVariable(envVar);
-
-            int result;
-            if (value != null &&
-                int.TryParse(value,
-                    System.Globalization.NumberStyles.Integer, // don't allow hex, real etc
-                    System.Globalization.CultureInfo.InvariantCulture, out result))
-            {
-                return result;
-            }
-            return defaultValue;
+            return allFound;
         }
 
         #endregion
-
     }
 }
